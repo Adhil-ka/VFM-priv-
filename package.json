@@ -1,0 +1,9 @@
+{
+  "name": "vascular-flow-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vascular Flow Monitor (VFM) hackathon prototype",
+  "type": "module",
+  "scripts": { "start": "node server.mjs", "dev": "node --watch server.mjs" },
+  "engines": { "node": ">=20" }
+}

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#073a4a" />
+  <meta name="description" content="Vascular Flow Monitor (VFM) is a personalized vascular-access monitoring prototype." />
+  <title>Vascular Flow Monitor (VFM)</title>
+  <link rel="stylesheet" href="/assets/vfm.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header class="topbar">
+    <div class="brand" aria-label="Vascular Flow Monitor">
+      <span class="brand-mark" aria-hidden="true">V</span>
+      <span><strong>Vascular Flow Monitor</strong><small>VFM · Personalized flow insights</small></span>
+    </div>
+    <div class="header-actions">
+      <span id="connectionPill" class="status-pill is-neutral" role="status">Not connected</span>
+      <button id="connectBtn" class="button button-primary" type="button">Connect band</button>
+    </div>
+  </header>
+
+  <main id="main-content" class="page-shell">
+    <section class="prototype-note" aria-label="Prototype notice">
+      <span aria-hidden="true">ⓘ</span>
+      <p><strong>Hackathon prototype:</strong> VFM recognizes changes from your own baseline. It does not diagnose a condition or replace clinical advice.</p>
+    </section>
+
+    <section class="hero-card card" aria-labelledby="flow-heading">
+      <div class="hero-copy">
+        <p class="eyebrow">Your access-monitoring companion</p>
+        <h1 id="flow-heading">Know when your flow pattern changes.</h1>
+        <p class="hero-text">VFM listens for personalized changes in vascular-flow features, verifies them before alerting, and keeps the explanation clear.</p>
+      </div>
+      <div class="hero-state" aria-live="polite">
+        <span id="stateDot" class="state-dot is-neutral" aria-hidden="true"></span>
+        <div><p id="stateLabel" class="state-label">Ready to connect</p><p id="stateDetail" class="state-detail">Pair your VFM band to begin.</p></div>
+      </div>
+    </section>
+
+    <section class="profile-card card" aria-labelledby="profile-heading">
+      <div class="section-heading"><div><p class="eyebrow">Setup</p><h2 id="profile-heading">Your monitoring profile</h2></div><span id="savedProfile" class="subtle-label">Saved only on this device</span></div>
+      <form id="profileForm" class="profile-form">
+        <label>Display name or alias<input id="patientAlias" name="patientAlias" maxlength="36" autocomplete="off" placeholder="e.g. Maya" required /></label>
+        <label>Access arm<select id="accessSide" name="accessSide"><option value="Left">Left arm</option><option value="Right">Right arm</option></select></label>
+        <button class="button button-secondary" type="submit">Save profile</button>
+      </form>
+    </section>
+
+    <section class="calibration-card card" aria-labelledby="calibration-heading">
+      <div class="section-heading"><div><p class="eyebrow">Step 1</p><h2 id="calibration-heading">Build your personal baseline</h2></div><span id="baselineBadge" class="status-pill is-neutral">Not calibrated</span></div>
+      <p id="calibrationCopy" class="support-copy">Connect the band, stay still, and begin a 60-second quality-checked calibration.</p>
+      <div id="calibrationTrack" class="progress-track" role="progressbar" aria-label="Calibration progress" aria-valuemin="0" aria-valuemax="60" aria-valuenow="0"><span id="calibrationProgress" class="progress-fill"></span></div>
+      <div class="calibration-footer"><span id="calibrationStatus">0 of 60 quality readings collected</span><button id="calibrateBtn" class="button button-primary" type="button" disabled>Start calibration</button></div>
+    </section>
+
+    <section class="metrics-grid" aria-label="Current flow measurements">
+      <article class="metric-card card"><p>Flow pattern ratio</p><strong id="currentRatio">—</strong><span>Higher-frequency to lower-frequency energy</span></article>
+      <article class="metric-card card"><p>Personal baseline</p><strong id="baselineValue">—</strong><span id="thresholdText">Calibrate to set a threshold</span></article>
+      <article class="metric-card card"><p>Change from baseline</p><strong id="deltaValue">—</strong><span id="deltaText">Waiting for a reading</span></article>
+      <article class="metric-card card"><p>Signal quality</p><strong id="qualityValue">—</strong><span id="qualityText">Band not connected</span></article>
+    </section>
+
+    <section class="chart-card card" aria-labelledby="trend-heading">
+      <div class="section-heading"><div><p class="eyebrow">Live trend</p><h2 id="trend-heading">Flow pattern over time</h2></div><span id="sourceBadge" class="source-badge">Live band</span></div>
+      <div class="chart-key" aria-label="Chart legend"><span><i class="legend-line line-live"></i>Current pattern</span><span><i class="legend-line line-baseline"></i>Personal threshold</span></div>
+      <canvas id="trendCanvas" role="img" aria-label="Live flow pattern chart"></canvas><p id="chartDescription" class="visually-hidden">No readings yet.</p>
+    </section>
+
+    <section class="quality-card card" aria-labelledby="quality-heading">
+      <div class="section-heading"><div><p class="eyebrow">Band placement</p><h2 id="quality-heading">Signal check</h2></div><span id="contactBadge" class="status-pill is-neutral">Waiting for band</span></div>
+      <div class="quality-meter"><span id="qualityFill"></span></div><p id="placementGuidance" class="support-copy">Place the acoustic sensor over the access site and secure the band comfortably.</p>
+    </section>
+
+    <section class="timeline-card card" aria-labelledby="timeline-heading">
+      <div class="section-heading"><div><p class="eyebrow">Activity</p><h2 id="timeline-heading">VFM timeline</h2></div><button id="exportBtn" class="text-button" type="button">Export summary</button></div>
+      <ol id="eventTimeline" class="event-timeline" aria-live="polite"><li class="event-item event-system"><time>Now</time><p>VFM is ready. Pair a band or start the guided demo.</p></li></ol>
+    </section>
+
+    <section class="demo-card card" aria-labelledby="demo-heading">
+      <div class="section-heading"><div><p class="eyebrow">For the presentation</p><h2 id="demo-heading">Guided demo mode</h2></div><span class="demo-label">Clearly simulated</span></div>
+      <p class="support-copy">Replay follows the same validation and alert pipeline as band telemetry. Demo calibration takes 10 seconds; alert timers are accelerated.</p>
+      <div class="demo-actions"><button class="button button-secondary" data-demo="normal" type="button">Stable flow</button><button class="button button-secondary" data-demo="transient" type="button">Transient change</button><button class="button button-danger-outline" data-demo="persistent" type="button">Persistent risk</button><button id="stopDemoBtn" class="text-button" type="button" disabled>Stop replay</button></div>
+    </section>
+
+    <section class="data-actions" aria-label="Data controls"><button id="resetBtn" class="text-button text-danger" type="button">Reset VFM data on this device</button><span id="apiStatus" class="api-status" aria-live="polite">Checking local alert service…</span></section>
+  </main>
+
+  <dialog id="alertDialog" class="alert-dialog" aria-labelledby="alertTitle">
+    <div class="alert-icon" aria-hidden="true">!</div><p class="eyebrow alert-eyebrow">VFM needs your attention</p><h2 id="alertTitle">A flow-pattern change persisted.</h2>
+    <p id="alertEvidence" class="alert-evidence">VFM verified the change across a second check.</p><div class="countdown-block"><span>Demo clinic notification in</span><strong id="safetyCountdown">05:00</strong></div>
+    <p class="dialog-note">This prototype can simulate a clinic-delivery receipt. It does not contact emergency services.</p><div class="dialog-actions"><button id="acknowledgeBtn" class="button button-primary" type="button">I’m safe — acknowledge</button><button id="repositionBtn" class="button button-secondary" type="button">Check band placement</button></div>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/assets/vfm.js"></script>
+</body>
+</html>
