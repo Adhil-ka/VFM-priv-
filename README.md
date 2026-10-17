@@ -121,18 +121,19 @@ The UI clearly labels demo behavior, simulated notifications, and the medical-de
 
 ## 6. What the current website actually demonstrates
 
-The repository contains a browser-based prototype rather than a native mobile application. The main experience is served from `AVF.html` and uses the following user-facing sections:
+The repository contains a browser-based prototype rather than a native mobile application. The interface is served from `AVF.html` and organised as five views behind a hash router:
 
-- **Connection status:** Connect or disconnect the VFM band and see the current device state.
-- **Monitoring profile:** Store a display alias and access side locally on the device.
-- **Personal calibration:** Collect a quality-checked baseline before monitoring begins.
-- **Live metrics:** View the current flow-pattern ratio, personal baseline, percentage change, and signal quality.
-- **Trend chart:** Compare current readings with the personal threshold over time.
-- **Signal check:** See sensor contact, quality, and placement guidance.
-- **VFM timeline:** Understand what the system has done and why.
-- **Guided demo mode:** Replay stable flow, transient change, and persistent change scenarios without requiring a physical band.
-- **Alert dialog:** Explain that the change persisted across a second check and start the prototype safety timer.
-- **Data controls:** Export a monitoring summary or reset VFM data stored on the device.
+- **Monitor:** Operational status with a pulse ring that beats at the measured heart rate, the second-check recheck panel, personal-baseline calibration, four primary readouts (flow ratio, SpO₂, heart rate, signal quality) and the flow-pattern trace.
+- **Readings:** A sortable, filterable, paginated log of every admissible reading. Columns are time, flow ratio, personal baseline, change from baseline, **SpO₂**, **heart rate**, perfusion index, quality and classification state. This view is also the accessible equivalent of the trace chart — the canvas is a shape, the table is the data behind it.
+- **Signals:** Where the ratio comes from (low-band versus high-band acoustic energy), how much optical signal is reaching the sensor (perfusion gauge with quality bands), the device flag state, and dominant-frequency history.
+- **Events:** A severity strip plus a filterable audit log where each entry can be expanded to show the measurements behind the decision.
+- **Demo:** Three guided scenarios, each stating what it proves, what to say, and what result to expect.
+
+Supporting behaviour:
+
+- **Profile:** Display alias and access side, stored in a drawer so it does not interrupt the monitoring flow.
+- **Data controls:** Export a monitoring summary or reset everything held on the device.
+- **Theme:** Full dark and light palettes, toggled from the app bar and persisted locally.
 
 The demo mode is especially important for judging. It exercises the same validation and alert path as live telemetry while making the presentation reliable and safe.
 
@@ -199,19 +200,51 @@ The browser and wearable share a deliberately small contract.
 
 ### Telemetry packet
 
-Telemetry is exactly 20 bytes and uses little-endian encoding:
+Telemetry is little-endian. Two frame revisions exist and **both are accepted**:
 
-| Field | Type | Purpose |
+| Revision | Bytes | Contents |
 | --- | --- | --- |
-| Version | `u8` | Packet format version |
-| Sequence | `u16` | Reading order and continuity check |
-| Low-band power | `f32` | Lower-frequency acoustic energy |
-| High-band power | `f32` | Higher-frequency acoustic energy |
-| Acoustic amplitude | `f32` | Overall acoustic signal magnitude |
-| Dominant frequency | `u16` | Dominant frequency in Hz |
-| Quality | `u8` | Signal-quality score or category |
-| BPM | `u8` | Pulse estimate |
-| Flags | `u8` | Contact, PPG, fault, and haptic state |
+| v1 | 20 | Acoustic features and pulse rate (original contract) |
+| v2 | 22 | v1 plus optical saturation and perfusion index |
+
+| Offset | Type | Field | Purpose |
+| --- | --- | --- | --- |
+| 0 | `u8` | Version | Packet format version: `1` or `2` |
+| 1 | `u16` | Sequence | Reading order and continuity check |
+| 3 | `f32` | Low-band power | Lower-frequency acoustic energy |
+| 7 | `f32` | High-band power | Higher-frequency acoustic energy |
+| 11 | `f32` | Acoustic amplitude | Overall acoustic signal magnitude |
+| 15 | `u16` | Dominant frequency | Dominant frequency in Hz |
+| 17 | `u8` | Quality | Signal-quality score, 0-100 |
+| 18 | `u8` | BPM | Pulse estimate |
+| 19 | `u8` | Flags | Contact, PPG, fault, and haptic state |
+| 20 | `u8` | SpO₂ | **v2 only.** Peripheral oxygen saturation, percent |
+| 21 | `u8` | Perfusion index | **v2 only.** Optical signal strength reaching the sensor, 0-100 |
+
+### Why the frame is 22 bytes and not 21
+
+A saturation percentage reported without a perfusion-quality companion is not
+trustworthy — which is why real pulse oximeters always report both. Perfusion index
+is the measure of how much optical signal is actually reaching the sensor, so it is
+what qualifies an SpO₂ number. Adding it is what justifies the 22nd byte.
+
+### Backward compatibility
+
+Firmware that has not yet been updated keeps working. A 20-byte v1 frame is parsed
+normally and reports **no optical vitals**; a v1 frame that claims version 2 cannot
+fabricate them, because a 20-byte frame is structurally incapable of carrying them.
+The SpO₂ and heart-rate columns resolve to an em dash with an explanatory tooltip
+explaining which of the three reasons applies:
+
+| Reason | Meaning |
+| --- | --- |
+| `Firmware v1 frame` | The band sent 20 bytes; the field does not exist |
+| `PPG not asserted` | Flag bit 1 was clear, so optical values are not admissible |
+| `Out of range` | The value fell outside its plausibility bounds and was discarded |
+
+This is the honest cost of putting SpO₂ in the wire format rather than simulating
+it in the browser: **the column reads as unavailable until firmware ships v2
+frames.** The guided demo emits v2, so the column is fully populated on stage.
 
 ### Flags
 
@@ -435,7 +468,18 @@ Then open:
 http://127.0.0.1:3000
 ```
 
-The server serves `AVF.html` as the application entry point.
+The server serves `AVF.html` as the application entry point. There is no install
+step: the single third-party dependency is committed under `assets/vendor/`.
+
+### Run the protocol tests
+
+```bash
+npm test
+```
+
+`test/packet.test.mjs` covers the v1/v2 decode and encode paths, the PPG-valid
+gating, plausibility-bound rejection, malformed-frame handling, and the admissibility
+gate. It imports the production decoder directly and needs no browser.
 
 ### Android Chrome and Web Bluetooth
 
@@ -483,17 +527,34 @@ Never expose provider credentials in browser code or commit them to the reposito
 
 ```text
 .
-├── AVF.html              # Main VFM browser interface
+├── AVF.html                     # App shell and the five views
 ├── assets/
-│   ├── vfm.css           # Visual system and responsive layout
-│   └── vfm.js            # BLE, calibration, demo, chart, and alert logic
-├── server.mjs            # Static server, health endpoint, and alert audit API
-├── package.json          # Node metadata and start/dev scripts
-├── .env.example          # Optional server-side notification configuration
-├── handoff.md            # Project handoff and implementation notes
-└── data/
-    └── alert-audit.ndjson # Generated local audit output; not clinical data
+│   ├── vfm.css                  # Design system: tokens, components, responsive, print
+│   ├── js/
+│   │   ├── main.js              # App controller: ingest, calibration, recheck, alert
+│   │   ├── ble.js               # v1/v2 packet decode + encode, Web Bluetooth
+│   │   ├── engine.js            # Baseline learning, classification, reading projection
+│   │   ├── store.js             # IndexedDB persistence
+│   │   ├── theme.js             # Dual palette, motion budget
+│   │   ├── views.js             # Hash router
+│   │   ├── vitals.js            # Primary readout quartet + pulse ring
+│   │   ├── readings-table.js    # Sortable/filterable/paginated reading log
+│   │   ├── signals.js           # Spectral balance, perfusion gauge, device flags
+│   │   ├── events.js            # Activity seismograph + audit log
+│   │   ├── demo.js              # Scenario definitions and synthetic packet generator
+│   │   ├── alert.js             # Escalation dialog and countdown
+│   │   ├── format.js            # Shared formatting and clinical display bands
+│   │   ├── charts/              # scope, sparkline, seismograph
+│   │   └── ui/                  # odometer, decode-scramble, toast
+│   └── vendor/                  # Third-party code, committed — see vendor/README.md
+├── server.mjs                   # Static server, health endpoint, alert audit API
+├── test/packet.test.mjs         # Protocol unit tests
+├── package.json                 # Node metadata and start/dev/test scripts
+└── data/alert-audit.ndjson      # Generated local audit output; not clinical data
 ```
+
+There is no build step and no `npm install`. Native ES modules are served directly,
+and the single third-party dependency is committed under `assets/vendor/`.
 
 The physical ESP32 firmware is not included in this repository. The browser and server are designed around the BLE contract documented above so firmware can be developed and tested independently.
 
@@ -519,6 +580,27 @@ Content-Type: application/json
 ```
 
 The server normalizes the alert, invokes the configured notification provider, stores the in-memory event, and appends an audit record.
+
+The normalized evidence object carries the acoustic measurements **and** the optical
+ones, so an audit record explains a saturation alert as well as a flow-ratio alert:
+
+```json
+{
+  "evidence": {
+    "ratio": 1.493,
+    "baseline": 1.245,
+    "deltaPercent": 19.9,
+    "amplitudeDeltaPercent": -15.6,
+    "dominantFrequencyHz": 485,
+    "spo2": 93,
+    "bpm": 88,
+    "perfusionIndex": 6,
+    "quality": 91
+  }
+}
+```
+
+Absent optical values are normalized to `null` rather than omitted or zeroed.
 
 ### Acknowledge an alert
 
@@ -627,6 +709,91 @@ VFM is a compact demonstration of a broader product idea:
 > **Use a wearable to make subtle physiological change visible, use a personal baseline to make the signal meaningful, use a recheck to make the alert more responsible, and use clear explanations to keep the human in control.**
 
 The hackathon contribution is not a claim of clinical readiness. It is an end-to-end, privacy-first prototype that makes the path from wearable telemetry to explainable decision support tangible, testable, and ready for the next stage of engineering and clinical validation.
+
+---
+
+## 20. Interface design system
+
+### Colour
+
+Two complete palettes are defined as token sets in `assets/js/theme.js`. Components
+never name a colour directly, so the light theme is a token swap rather than a second
+stylesheet. Dark is the default; the first visit honours `prefers-color-scheme`, and
+the choice persists.
+
+| Token role | Dark | Light | Used for |
+| --- | --- | --- | --- |
+| `accent` | `#ffb340` | `#a86400` | Signal amber — live trace, calibration, primary action |
+| `info` | `#7d9cff` | `#2f4fb8` | Personal baseline, quality bars, low-band energy |
+| `nominal` | `#5ee6a8` | `#0f7048` | Within personal range |
+| `watch` | `#ffc247` | `#8a5a00` | Drifting, marginal, recheck in progress |
+| `alert` | `#ff5c72` | `#c02b45` | Flagged, escalated |
+
+Saturation and perfusion bands follow the display convention used on clinical pulse
+oximetry. They are a **display convention, not a diagnosis**.
+
+### Type
+
+A system UI stack, plus a monospace stack with tabular figures for **every measured
+value** — ratio, SpO₂, heart rate, perfusion, quality, timestamps, deltas, evidence
+rows. Numbers that jitter in width read as unreliable; tabular figures are what
+makes a dashboard feel like an instrument rather than a consumer app. The strict CSP
+forbids web fonts, so there are no font requests at all.
+
+### Motion
+
+Everything except one vendored utility is hand-built, and all of it is suppressed or
+reduced under `prefers-reduced-motion`:
+
+| Effect | Implementation |
+| --- | --- |
+| Phosphor trace | Canvas polyline with an alpha ramp toward the head plus a short additive glow ghost of the most recent samples |
+| Pulse ring | Animation period derived from the measured heart rate — the status cluster breathes at the subject's actual pulse |
+| Odometer | Digit strips translated vertically inside masked cells, staggered from the least significant digit, with fixed decimal places |
+| Calibration track | `stroke-dashoffset` reveal along a generated ECG-style trace |
+| Alert | Sonar rings expanding from the alert origin, plus a depleting countdown ring |
+| Decode-scramble | Status labels resolve from a glyph pool on state transitions only |
+| Differential bloom | Brief radial glow on value change — never a colour flash |
+| View switches | Native View Transitions API, degrading to an instant swap |
+| DOM mutations | `@formkit/auto-animate` (MIT, vendored) for event insertion and table re-sort, disabled while rows stream in every second |
+
+### Responsiveness
+
+| Width | Layout |
+| --- | --- |
+| ≥ 1400 px | Wide container, left rail |
+| 900-1399 px | Left rail, single-column content |
+| 600-899 px | Bottom tab bar |
+| < 600 px | Bottom tab bar; the readings table collapses into stacked label/value records rather than a horizontal scroller, because a sideways-scrolling table on a phone hides the very columns being compared |
+
+### Accessibility
+
+- The readings table is the screen-reader-accessible equivalent of the canvas trace.
+- Sortable headers expose `aria-sort`; filters expose `aria-pressed`.
+- Operational status is announced once per **phase change**, never on every tick of a
+  running clock. The recheck countdown is `aria-hidden` for the same reason.
+- The acknowledgement dialog cannot be dismissed with Escape: a pending alert must be
+  resolved deliberately.
+- The alert states plainly what the acknowledgement window does and does not do.
+- After acknowledging or escalating, VFM keeps monitoring and keeps reporting the
+  drift, but does not re-alert on the same unresolved change until readings return to
+  the personal range. Acknowledging must not start an alert loop.
+- Programmatic focus is moved to the new view's heading for assistive technology, but
+  only draws a focus ring when navigation is actually keyboard-driven.
+- Full keyboard support, visible focus, skip link, landmarks, ≥44 px touch targets,
+  and a print stylesheet.
+
+### Content Security Policy
+
+`server.mjs` sends `script-src 'self'; style-src 'self'; connect-src 'self'` with no
+`'unsafe-inline'`. Consequences that shape the codebase:
+
+- **No CDN scripts.** Third-party code is vendored under `assets/vendor/`.
+- **No inline styles and no `<style>` blocks.** Script-driven styling goes through the
+  CSSOM (`el.style` / `setProperty`), which CSP does not govern.
+- **No web fonts.**
+- `.mjs` is mapped to `text/javascript` in the server's MIME table so the vendored
+  ES module can actually be executed.
 
 ---
 

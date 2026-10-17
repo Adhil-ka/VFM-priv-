@@ -11,7 +11,16 @@ const notificationMode = process.env.VFM_NOTIFICATION_MODE || 'demo';
 const startedAt = new Date().toISOString();
 const alerts = new Map();
 
-const mimeTypes = { '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8' };
+const mimeTypes = {
+  '.css': 'text/css; charset=utf-8',
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  // Vendored ES modules are served from .mjs, so they need the same script type.
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.txt': 'text/plain; charset=utf-8'
+};
 
 function responseJson(res, status, body) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
@@ -72,7 +81,18 @@ function normalizeAlert(body) {
     id: stringValue(body?.id, 64) || randomUUID(), patientAlias: stringValue(body?.patientAlias, 36),
     accessSide: ['Left', 'Right'].includes(body?.accessSide) ? body.accessSide : '',
     occurredAt: stringValue(body?.occurredAt, 40) || new Date().toISOString(), mode: body?.mode === 'demo' ? 'demo' : 'live',
-    evidence: { ratio: safeNumber(evidence.ratio), baseline: safeNumber(evidence.baseline), deltaPercent: safeNumber(evidence.deltaPercent), dominantFrequencyHz: safeNumber(evidence.dominantFrequencyHz), amplitudeDeltaPercent: safeNumber(evidence.amplitudeDeltaPercent) }
+    evidence: {
+      ratio: safeNumber(evidence.ratio),
+      baseline: safeNumber(evidence.baseline),
+      deltaPercent: safeNumber(evidence.ratioDelta),
+      amplitudeDeltaPercent: safeNumber(evidence.amplitudeDelta),
+      dominantFrequencyHz: safeNumber(evidence.dominantFrequencyHz),
+      // Optical channel. Absent on v1 frames, in which case these stay null.
+      spo2: safeNumber(evidence.spo2),
+      bpm: safeNumber(evidence.bpm),
+      perfusionIndex: safeNumber(evidence.perfusionIndex),
+      quality: safeNumber(evidence.quality)
+    }
   };
 }
 

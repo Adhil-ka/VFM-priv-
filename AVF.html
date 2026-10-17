@@ -1,98 +1,315 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark" data-motion="full">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#073a4a" />
-  <meta name="description" content="Vascular Flow Monitor (VFM) is a personalized vascular-access monitoring prototype." />
-  <title>Vascular Flow Monitor (VFM)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0b0e" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="description" content="Vascular Flow Monitor (VFM) — a privacy-first, personalized vascular-access monitoring prototype." />
+  <title>Vascular Flow Monitor</title>
   <link rel="stylesheet" href="/assets/vfm.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0b0e'/%3E%3Cpath d='M4 18h5l2.5-8 4 14 3-9 2 3h7.5' fill='none' stroke='%23ffb340' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to main content</a>
-  <header class="topbar">
-    <div class="brand" aria-label="Vascular Flow Monitor">
-      <span class="brand-mark" aria-hidden="true">V</span>
-      <span><strong>Vascular Flow Monitor</strong><small>VFM · Personalized flow insights</small></span>
-    </div>
-    <div class="header-actions">
-      <span id="connectionPill" class="status-pill is-neutral" role="status">Not connected</span>
-      <button id="connectBtn" class="button button-primary" type="button">Connect band</button>
-    </div>
-  </header>
+  <a class="skip-link" href="#view-host">Skip to content</a>
 
-  <main id="main-content" class="page-shell">
-    <section class="prototype-note" aria-label="Prototype notice">
-      <span aria-hidden="true">ⓘ</span>
-      <p><strong>Hackathon prototype:</strong> VFM recognizes changes from your own baseline. It does not diagnose a condition or replace clinical advice.</p>
-    </section>
-
-    <section class="hero-card card" aria-labelledby="flow-heading">
-      <div class="hero-copy">
-        <p class="eyebrow">Your access-monitoring companion</p>
-        <h1 id="flow-heading">Know when your flow pattern changes.</h1>
-        <p class="hero-text">VFM listens for personalized changes in vascular-flow features, verifies them before alerting, and keeps the explanation clear.</p>
+  <div class="app">
+    <!-- ── App bar ─────────────────────────────────────────────────────── -->
+    <header class="app-bar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" focusable="false"><path d="M4 18h5l2.5-8 4 14 3-9 2 3h7.5" /></svg>
+        </span>
+        <span class="brand-text">
+          <strong>Vascular Flow Monitor</strong>
+          <small>Personalized vascular-access change detection</small>
+        </span>
       </div>
-      <div class="hero-state" aria-live="polite">
-        <span id="stateDot" class="state-dot is-neutral" aria-hidden="true"></span>
-        <div><p id="stateLabel" class="state-label">Ready to connect</p><p id="stateDetail" class="state-detail">Pair your VFM band to begin.</p></div>
-      </div>
-    </section>
 
-    <section class="profile-card card" aria-labelledby="profile-heading">
-      <div class="section-heading"><div><p class="eyebrow">Setup</p><h2 id="profile-heading">Your monitoring profile</h2></div><span id="savedProfile" class="subtle-label">Saved only on this device</span></div>
-      <form id="profileForm" class="profile-form">
-        <label>Display name or alias<input id="patientAlias" name="patientAlias" maxlength="36" autocomplete="off" placeholder="e.g. Maya" required /></label>
-        <label>Access arm<select id="accessSide" name="accessSide"><option value="Left">Left arm</option><option value="Right">Right arm</option></select></label>
-        <button class="button button-secondary" type="submit">Save profile</button>
+      <div class="app-bar-actions">
+        <span id="connection-pill" class="chip" data-tone="neutral">Not connected</span>
+        <span id="source-badge" class="chip chip-sm" data-tone="neutral">No band</span>
+        <button id="theme-toggle" class="icon-btn" type="button" data-theme="dark" aria-label="Switch to light theme">
+          <span class="icon-btn-glyph" aria-hidden="true"></span>
+          <span id="theme-label" class="visually-hidden">Dark</span>
+        </button>
+        <button id="profileBtn" class="icon-btn" type="button" aria-expanded="false" aria-label="Monitoring profile">
+          <span aria-hidden="true">◍</span>
+        </button>
+        <button id="connectBtn" class="btn btn-primary" type="button" data-phase="">
+          <span>Connect band</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Primary navigation ──────────────────────────────────────────── -->
+    <nav id="primary-nav" class="nav" aria-label="Primary">
+      <a class="nav-item is-active" data-nav="monitor" href="#/monitor">
+        <span class="nav-glyph" aria-hidden="true">◈</span>
+        <span class="nav-label">Monitor</span>
+      </a>
+      <a class="nav-item" data-nav="readings" href="#/readings">
+        <span class="nav-glyph" aria-hidden="true">▤</span>
+        <span class="nav-label">Readings</span>
+      </a>
+      <a class="nav-item" data-nav="signals" href="#/signals">
+        <span class="nav-glyph" aria-hidden="true">∿</span>
+        <span class="nav-label">Signals</span>
+      </a>
+      <a class="nav-item" data-nav="events" href="#/events">
+        <span class="nav-glyph" aria-hidden="true">⌁</span>
+        <span class="nav-label">Events</span>
+      </a>
+      <a class="nav-item" data-nav="demo" href="#/demo">
+        <span class="nav-glyph" aria-hidden="true">▶</span>
+        <span class="nav-label">Demo</span>
+      </a>
+      <p class="nav-legend">
+        <span id="session-badge">0 readings held</span>
+      </p>
+    </nav>
+
+    <!-- ── View host ───────────────────────────────────────────────────── -->
+    <main id="view-host" class="view-host" tabindex="-1">
+      <div id="view-host-inner" class="view-host-inner">
+
+        <!-- ══ MONITOR ══════════════════════════════════════════════════ -->
+        <section class="view" data-view="monitor" aria-labelledby="monitor-heading">
+          <div class="view-head">
+            <div>
+              <p class="eyebrow">Live</p>
+              <h1 id="monitor-heading" class="view-title" data-view-heading>Monitor</h1>
+            </div>
+            <p class="view-sub">Status, primary readouts, and the flow-pattern trace.</p>
+          </div>
+
+          <p class="notice">
+            <span aria-hidden="true">◆</span>
+            <strong>Prototype boundary.</strong> VFM compares readings against your own baseline and verifies a change before raising an alert. It does not diagnose a condition, replace clinical advice, or contact emergency services.
+          </p>
+
+          <!-- Status strip -->
+          <section class="status-strip" aria-labelledby="status-heading">
+            <h2 id="status-heading" class="visually-hidden">Operational status</h2>
+            <div class="status-pulse">
+              <span id="pulse-ring" class="pulse-ring" data-active="false" data-tone="nominal" aria-hidden="true"></span>
+              <span id="state-dot" class="state-dot" data-tone="neutral" aria-hidden="true"></span>
+            </div>
+            <div class="status-copy">
+              <p id="state-label" class="status-label">Ready to connect</p>
+              <p id="state-detail" class="status-detail">Pair a VFM band to begin.</p>
+            </div>
+            <p id="state-live" class="visually-hidden" role="status" aria-live="polite"></p>
+          </section>
+
+          <!-- Recheck -->
+          <section id="recheck-card" class="card recheck-card" hidden aria-labelledby="recheck-title">
+            <div class="recheck-head">
+              <div>
+                <p class="eyebrow">Stage 2 of 2</p>
+                <h2 id="recheck-title" class="card-title">Second check in progress</h2>
+              </div>
+              <strong id="recheck-clock" class="recheck-clock" aria-hidden="true">00:10</strong>
+            </div>
+            <p id="recheck-detail" class="note">VFM is confirming the change before it raises anything.</p>
+            <div class="recheck-track">
+              <span id="recheck-fill" class="recheck-fill"></span>
+            </div>
+            <p id="recheck-tally" class="note note-sm">0 of 0 readings changed</p>
+          </section>
+
+          <!-- Calibration -->
+          <section id="calibration-card" class="card calibration-card" data-phase="idle" aria-labelledby="calibration-heading">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">Stage 1</p>
+                <h2 id="calibration-heading" class="card-title">Personal baseline</h2>
+              </div>
+              <span id="baseline-badge" class="chip" data-tone="neutral">Not calibrated</span>
+            </div>
+
+            <p id="calibrate-hint" class="note">A personal calibration needs 60 quality-checked readings.</p>
+
+            <div class="scribble" role="progressbar" id="calibration-track" aria-label="Calibration progress" aria-valuemin="0" aria-valuemax="60" aria-valuenow="0">
+              <!-- The trace is an ECG-style waveform generated in JS; both paths
+                   share one geometry so the fill overlays the base exactly. -->
+              <svg class="scribble-svg" viewBox="0 0 1000 26" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                <path class="scribble-base" d=""></path>
+                <path id="calibration-path" class="scribble-fill" d=""></path>
+              </svg>
+              <span id="calibration-progress" class="scribble-count">0%</span>
+            </div>
+
+            <div class="calibration-foot">
+              <p class="note note-sm"><span id="calibration-status">No calibration has been run yet.</span></p>
+              <button id="calibrate-btn" class="btn btn-secondary" type="button" disabled>Start calibration</button>
+            </div>
+            <p id="baseline-summary" class="baseline-summary"></p>
+          </section>
+
+          <!-- Vitals -->
+          <section class="vitals" aria-labelledby="vitals-heading">
+            <h2 id="vitals-heading" class="visually-hidden">Primary readouts</h2>
+            <div id="vitals-root" class="vitals-grid"></div>
+          </section>
+
+          <!-- Scope -->
+          <section class="card scope-card" aria-labelledby="scope-heading">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">Flow pattern</p>
+                <h2 id="scope-heading" class="card-title">Ratio over time</h2>
+              </div>
+              <ul class="legend">
+                <li><i class="legend-swatch legend-accent" aria-hidden="true"></i>Current ratio</li>
+                <li><i class="legend-swatch legend-info" aria-hidden="true"></i>Personal baseline</li>
+                <li><i class="legend-swatch legend-alert" aria-hidden="true"></i>Alert threshold</li>
+                <li><i class="legend-swatch legend-band" aria-hidden="true"></i>Tolerance band</li>
+              </ul>
+            </div>
+            <div class="scope-wrap">
+              <canvas id="scope-canvas" class="scope-canvas" role="img" aria-label="Live flow-pattern ratio chart"></canvas>
+              <div id="scope-tooltip" class="scope-tip" data-visible="false" aria-hidden="true"></div>
+            </div>
+            <p class="note note-sm">
+              <span id="scope-caption">No readings yet.</span>
+              <span class="note-hint">Hover to inspect · click to pin</span>
+            </p>
+          </section>
+        </section>
+
+        <!-- ══ READINGS ════════════════════════════════════════════════ -->
+        <section class="view" data-view="readings" hidden aria-labelledby="readings-heading">
+          <div class="view-head">
+            <div>
+              <p class="eyebrow">Log</p>
+              <h1 id="readings-heading" class="view-title" data-view-heading>Readings</h1>
+            </div>
+            <p class="view-sub">Every admissible reading, sortable. SpO₂, heart rate and perfusion index come from the optical sensor and require a v2 telemetry frame.</p>
+          </div>
+          <div id="readings-table" class="readings-table"></div>
+        </section>
+
+        <!-- ══ SIGNALS ═════════════════════════════════════════════════ -->
+        <section class="view" data-view="signals" hidden aria-labelledby="signals-heading">
+          <div class="view-head">
+            <div>
+              <p class="eyebrow">Signal</p>
+              <h1 id="signals-heading" class="view-title" data-view-heading>Signals</h1>
+            </div>
+            <p class="view-sub">Where the ratio comes from, how much optical signal is reaching the sensor, and what the band is reporting.</p>
+          </div>
+          <div id="signals-root" class="signals-root"></div>
+        </section>
+
+        <!-- ══ EVENTS ══════════════════════════════════════════════════ -->
+        <section class="view" data-view="events" hidden aria-labelledby="events-heading">
+          <div class="view-head">
+            <div>
+              <p class="eyebrow">Audit</p>
+              <h1 id="events-heading" class="view-title" data-view-heading>Events</h1>
+            </div>
+            <p class="view-sub">What VFM has done and why, newest first.</p>
+          </div>
+          <div id="events-root" class="events-root"></div>
+        </section>
+
+        <!-- ══ DEMO ════════════════════════════════════════════════════ -->
+        <section class="view" data-view="demo" hidden aria-labelledby="demo-heading">
+          <div class="view-head">
+            <div>
+              <p class="eyebrow">Presentation</p>
+              <h1 id="demo-heading" class="view-title" data-view-heading>Guided demo</h1>
+            </div>
+            <p class="view-sub">Synthetic packets, encoded as real v2 telemetry frames, pushed through the same pipeline as hardware.</p>
+          </div>
+          <div id="demo-root" class="demo-root"></div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- ── Data controls ──────────────────────────────────────────────── -->
+    <footer class="app-foot">
+      <p id="storage-note" class="foot-note">Stored on this device only. No cloud database, no raw audio, no telemetry upload.</p>
+      <div class="foot-actions">
+        <button id="export-btn" class="btn btn-ghost btn-sm" type="button">Export summary</button>
+        <button id="reset-btn" class="btn btn-ghost btn-sm btn-danger-ghost" type="button">Reset device data</button>
+        <span id="api-status" class="foot-status" role="status" aria-live="polite">Checking local service…</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ── Profile drawer ────────────────────────────────────────────────── -->
+  <div id="profile-panel" class="drawer-scrim" hidden>
+    <section class="drawer" role="dialog" aria-modal="true" aria-labelledby="profile-heading">
+      <div class="card-head">
+        <div>
+          <p class="eyebrow">Setup</p>
+          <h2 id="profile-heading" class="card-title">Monitoring profile</h2>
+        </div>
+        <button id="profile-close" class="icon-btn" type="button" aria-label="Close profile">
+          <span aria-hidden="true">✕</span>
+        </button>
+      </div>
+      <form id="profile-form" class="profile-form">
+        <label class="field">
+          <span>Display name or alias</span>
+          <input id="patientAlias" name="patientAlias" maxlength="36" autocomplete="off" placeholder="e.g. Maya" required />
+        </label>
+        <label class="field">
+          <span>Access arm</span>
+          <select id="accessSide" name="accessSide">
+            <option value="Left">Left arm</option>
+            <option value="Right">Right arm</option>
+          </select>
+        </label>
+        <button class="btn btn-primary" type="submit">Save profile</button>
+        <p class="note note-sm">Saved in this browser only. Never transmitted.</p>
       </form>
     </section>
+  </div>
 
-    <section class="calibration-card card" aria-labelledby="calibration-heading">
-      <div class="section-heading"><div><p class="eyebrow">Step 1</p><h2 id="calibration-heading">Build your personal baseline</h2></div><span id="baselineBadge" class="status-pill is-neutral">Not calibrated</span></div>
-      <p id="calibrationCopy" class="support-copy">Connect the band, stay still, and begin a 60-second quality-checked calibration.</p>
-      <div id="calibrationTrack" class="progress-track" role="progressbar" aria-label="Calibration progress" aria-valuemin="0" aria-valuemax="60" aria-valuenow="0"><span id="calibrationProgress" class="progress-fill"></span></div>
-      <div class="calibration-footer"><span id="calibrationStatus">0 of 60 quality readings collected</span><button id="calibrateBtn" class="button button-primary" type="button" disabled>Start calibration</button></div>
-    </section>
+  <!-- ── Escalation dialog ─────────────────────────────────────────────── -->
+  <dialog id="alert-dialog" class="alert" data-state="pending" aria-labelledby="alert-heading">
+    <div class="alert-ping" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="alert-icon" aria-hidden="true">!</div>
+    <p class="eyebrow alert-eyebrow">VFM needs your attention</p>
+    <h2 id="alert-heading" data-alert-headline>A flow-pattern change persisted</h2>
+    <p data-alert-summary class="alert-summary">VFM verified this change across a second check. Nothing has been sent anywhere.</p>
 
-    <section class="metrics-grid" aria-label="Current flow measurements">
-      <article class="metric-card card"><p>Flow pattern ratio</p><strong id="currentRatio">—</strong><span>Higher-frequency to lower-frequency energy</span></article>
-      <article class="metric-card card"><p>Personal baseline</p><strong id="baselineValue">—</strong><span id="thresholdText">Calibrate to set a threshold</span></article>
-      <article class="metric-card card"><p>Change from baseline</p><strong id="deltaValue">—</strong><span id="deltaText">Waiting for a reading</span></article>
-      <article class="metric-card card"><p>Signal quality</p><strong id="qualityValue">—</strong><span id="qualityText">Band not connected</span></article>
-    </section>
+    <ul data-alert-reasons class="alert-reasons" hidden></ul>
 
-    <section class="chart-card card" aria-labelledby="trend-heading">
-      <div class="section-heading"><div><p class="eyebrow">Live trend</p><h2 id="trend-heading">Flow pattern over time</h2></div><span id="sourceBadge" class="source-badge">Live band</span></div>
-      <div class="chart-key" aria-label="Chart legend"><span><i class="legend-line line-live"></i>Current pattern</span><span><i class="legend-line line-baseline"></i>Personal threshold</span></div>
-      <canvas id="trendCanvas" role="img" aria-label="Live flow pattern chart"></canvas><p id="chartDescription" class="visually-hidden">No readings yet.</p>
-    </section>
+    <div class="alert-clock">
+      <svg class="alert-ring" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+        <circle class="alert-ring-track" cx="60" cy="60" r="52" />
+        <circle data-alert-ring class="alert-ring-value" cx="60" cy="60" r="52" />
+      </svg>
+      <div class="alert-clock-copy">
+        <span class="alert-clock-label">Acknowledgement window</span>
+        <strong data-alert-countdown class="alert-clock-value">05:00</strong>
+      </div>
+    </div>
 
-    <section class="quality-card card" aria-labelledby="quality-heading">
-      <div class="section-heading"><div><p class="eyebrow">Band placement</p><h2 id="quality-heading">Signal check</h2></div><span id="contactBadge" class="status-pill is-neutral">Waiting for band</span></div>
-      <div class="quality-meter"><span id="qualityFill"></span></div><p id="placementGuidance" class="support-copy">Place the acoustic sensor over the access site and secure the band comfortably.</p>
-    </section>
+    <p data-alert-evidence class="note note-sm">These values came from a connected band.</p>
 
-    <section class="timeline-card card" aria-labelledby="timeline-heading">
-      <div class="section-heading"><div><p class="eyebrow">Activity</p><h2 id="timeline-heading">VFM timeline</h2></div><button id="exportBtn" class="text-button" type="button">Export summary</button></div>
-      <ol id="eventTimeline" class="event-timeline" aria-live="polite"><li class="event-item event-system"><time>Now</time><p>VFM is ready. Pair a band or start the guided demo.</p></li></ol>
-    </section>
+    <div class="alert-evidence">
+      <p class="eyebrow">Evidence</p>
+      <div data-alert-table class="evidence-table"></div>
+    </div>
 
-    <section class="demo-card card" aria-labelledby="demo-heading">
-      <div class="section-heading"><div><p class="eyebrow">For the presentation</p><h2 id="demo-heading">Guided demo mode</h2></div><span class="demo-label">Clearly simulated</span></div>
-      <p class="support-copy">Replay follows the same validation and alert pipeline as band telemetry. Demo calibration takes 10 seconds; alert timers are accelerated.</p>
-      <div class="demo-actions"><button class="button button-secondary" data-demo="normal" type="button">Stable flow</button><button class="button button-secondary" data-demo="transient" type="button">Transient change</button><button class="button button-danger-outline" data-demo="persistent" type="button">Persistent risk</button><button id="stopDemoBtn" class="text-button" type="button" disabled>Stop replay</button></div>
-    </section>
+    <p class="alert-note">
+      This prototype can simulate a clinic-delivery receipt. It does not contact emergency services, and it does not diagnose anything.
+    </p>
 
-    <section class="data-actions" aria-label="Data controls"><button id="resetBtn" class="text-button text-danger" type="button">Reset VFM data on this device</button><span id="apiStatus" class="api-status" aria-live="polite">Checking local alert service…</span></section>
-  </main>
+    <p data-alert-live class="visually-hidden" role="status" aria-live="polite"></p>
 
-  <dialog id="alertDialog" class="alert-dialog" aria-labelledby="alertTitle">
-    <div class="alert-icon" aria-hidden="true">!</div><p class="eyebrow alert-eyebrow">VFM needs your attention</p><h2 id="alertTitle">A flow-pattern change persisted.</h2>
-    <p id="alertEvidence" class="alert-evidence">VFM verified the change across a second check.</p><div class="countdown-block"><span>Demo clinic notification in</span><strong id="safetyCountdown">05:00</strong></div>
-    <p class="dialog-note">This prototype can simulate a clinic-delivery receipt. It does not contact emergency services.</p><div class="dialog-actions"><button id="acknowledgeBtn" class="button button-primary" type="button">I’m safe — acknowledge</button><button id="repositionBtn" class="button button-secondary" type="button">Check band placement</button></div>
+    <div class="alert-actions">
+      <button data-alert-ack class="btn btn-primary" type="button">I’m safe — acknowledge</button>
+      <button data-alert-reposition class="btn btn-secondary" type="button">Check band placement</button>
+    </div>
   </dialog>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/assets/vfm.js"></script>
+
+  <script type="module" src="/assets/js/main.js"></script>
 </body>
 </html>
